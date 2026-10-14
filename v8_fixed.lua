@@ -638,4 +638,65 @@ end)
 -- ============================================
 -- MINIMIZE / RESTORE
 -- ============================================
-local
+local minimized = false
+
+local function showLogo()
+    if minimized then return end
+    minimized = true
+    main.Visible = false
+    logo.Visible = true
+end
+
+local function showMenu()
+    minimized = false
+    logo.Visible = false
+    main.Visible = true
+end
+
+btnMin.MouseButton1Click:Connect(showLogo)
+btnClose.MouseButton1Click:Connect(showLogo)
+logo.MouseButton1Click:Connect(showMenu)
+
+-- ============================================
+-- DRAG
+-- ============================================
+local function makeDraggable(handle, target)
+    local activeInput, dragStart, startPos
+    handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            activeInput = input
+            dragStart = input.Position
+            startPos = target.Position
+        end
+    end)
+    handle.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch then
+            if input == activeInput then
+                local delta = input.Position - dragStart
+                target.Position = UDim2.new(
+                    startPos.X.Scale, startPos.X.Offset + delta.X,
+                    startPos.Y.Scale, startPos.Y.Offset + delta.Y
+                )
+            end
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input == activeInput then activeInput = nil end
+    end)
+end
+
+makeDraggable(titleBar, main)
+makeDraggable(logo, logo)
+
+-- ============================================
+-- INITIAL
+-- ============================================
+addResult("Versi", "v8 Fixed", PURPLE)
+addResult("Mode", "Analyzer + Gameplay", GREEN)
+addResult("PlaceId", tostring(game.PlaceId), WHITE)
+addResult("CreatorId", tostring(game.CreatorId), WHITE)
+addResult("Status", "Siap digunakan", MUTED)
+
+print("[LOADER ANALYZER v8] Loaded OK!")
