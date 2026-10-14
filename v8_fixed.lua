@@ -658,38 +658,97 @@ btnClose.MouseButton1Click:Connect(showLogo)
 logo.MouseButton1Click:Connect(showMenu)
 
 -- ============================================
--- DRAG
+-- DRAG (FIXED)
 -- ============================================
-local function makeDraggable(handle, target)
-    local activeInput, dragStart, startPos
-    handle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-            or input.UserInputType == Enum.UserInputType.Touch then
-            activeInput = input
-            dragStart = input.Position
-            startPos = target.Position
-        end
-    end)
-    handle.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement
-            or input.UserInputType == Enum.UserInputType.Touch then
-            if input == activeInput then
-                local delta = input.Position - dragStart
-                target.Position = UDim2.new(
-                    startPos.X.Scale, startPos.X.Offset + delta.X,
-                    startPos.Y.Scale, startPos.Y.Offset + delta.Y
-                )
-            end
-        end
-    end)
-    UserInputService.InputEnded:Connect(function(input)
-        if input == activeInput then activeInput = nil end
-    end)
+local dragging = false
+local dragStart = nil
+local startPos = nil
+
+local function startDrag(input)
+    dragging = true
+    dragStart = input.Position
+    startPos = main.Position
 end
 
-makeDraggable(titleBar, main)
-makeDraggable(logo, logo)
+local function updateDrag(input)
+    if not dragging then return end
+    local delta = input.Position - dragStart
+    main.Position = UDim2.new(
+        startPos.X.Scale,
+        startPos.X.Offset + delta.X,
+        startPos.Y.Scale,
+        startPos.Y.Offset + delta.Y
+    )
+end
 
+local function stopDrag()
+    dragging = false
+end
+
+-- Header drag
+titleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        startDrag(input)
+    end
+end)
+
+titleBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch then
+        updateDrag(input)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch then
+        updateDrag(input)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        stopDrag()
+    end
+end)
+
+-- Logo drag
+local logoDragging = false
+local logoDragStart = nil
+local logoStartPos = nil
+
+logo.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        logoDragging = true
+        logoDragStart = input.Position
+        logoStartPos = logo.Position
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if logoDragging then
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch then
+            local delta = input.Position - logoDragStart
+            logo.Position = UDim2.new(
+                logoStartPos.X.Scale,
+                logoStartPos.X.Offset + delta.X,
+                logoStartPos.Y.Scale,
+                logoStartPos.Y.Offset + delta.Y
+            )
+        end
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        logoDragging = false
+    end
+end)
 -- ============================================
 -- INITIAL
 -- ============================================
