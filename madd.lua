@@ -1,6 +1,6 @@
--- PURPLE MOVEMENT - REWRITE
+-- PURPLE MOVEMENT - FINAL
 -- Speed Boost (1-9999) + Infinity Jump + Draggable
--- Fokus: tombol PASTI bisa diklik
+-- Tombol dijamin bisa diklik
 
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
@@ -12,7 +12,7 @@ local normalSpeed = 16
 local boostSpeed = 50
 local MIN_SPEED, MAX_SPEED = 1, 9999
 
--- ================== HELPERS ==================
+-- ================== HELPER ==================
 local function getHumanoid()
     local char = player.Character
     if not char then return nil end
@@ -23,13 +23,14 @@ local function corner(parent, r)
     local c = Instance.new("UICorner")
     c.CornerRadius = UDim.new(0, r)
     c.Parent = parent
+    return c
 end
 
 -- ================== GUI ==================
 local gui = Instance.new("ScreenGui")
 gui.Name = "PurpleMovement"
 gui.ResetOnSpawn = false
-gui.DisplayOrder = 999
+gui.DisplayOrder = 9999
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 local placed = pcall(function() gui.Parent = game:GetService("CoreGui") end)
@@ -39,11 +40,11 @@ end
 
 local frame = Instance.new("Frame")
 frame.Name = "Main"
-frame.Size = UDim2.fromOffset(240, 330)
+frame.Size = UDim2.fromOffset(250, 340)
 frame.Position = UDim2.new(0.05, 0, 0.3, 0)
 frame.BackgroundColor3 = Color3.fromRGB(40, 20, 65)
 frame.BorderSizePixel = 0
-frame.Active = false        -- penting: jangan menelan klik tombol
+frame.Active = false
 frame.Parent = gui
 corner(frame, 12)
 
@@ -54,6 +55,7 @@ title.Text = "PURPLE MOVEMENT"
 title.TextColor3 = Color3.fromRGB(210, 160, 255)
 title.TextScaled = true
 title.Font = Enum.Font.GothamBold
+title.ZIndex = 10
 title.Parent = frame
 
 -- ================== TOMBOL ==================
@@ -66,10 +68,10 @@ local function makeButton(text, y)
     b.TextScaled = true
     b.Font = Enum.Font.GothamBold
     b.AutoButtonColor = true
-    b.Active = true             -- penting untuk beberapa executor
+    b.Active = true
     b.Selectable = true
     b.Text = text
-    b.ZIndex = 10               -- di atas elemen lain
+    b.ZIndex = 10
     b.Parent = frame
     corner(b, 8)
     return b
@@ -182,7 +184,7 @@ end)
 local frameDragging = false
 local dragStart, dragOrigin
 
-local dragBar = Instance.new("TextButton")   -- area drag: judul
+local dragBar = Instance.new("TextButton")
 dragBar.Size = UDim2.new(1, 0, 0, 34)
 dragBar.BackgroundTransparency = 1
 dragBar.Text = ""
@@ -223,7 +225,7 @@ UIS.InputEnded:Connect(function(input)
     end
 end)
 
--- ================== CLICK BINDING (single, anti-double) ==================
+-- ================== CLICK BINDING ==================
 local function onSpeedClick()
     speedOn = not speedOn
     local h = getHumanoid()
@@ -234,17 +236,19 @@ local function onSpeedClick()
         if h then h.WalkSpeed = normalSpeed end
         speedButton.Text = "Speed: OFF"
     end
-    print("[PurpleMovement] Speed:", speedOn, "value:", boostSpeed)
 end
 
 local function onJumpClick()
     jumpOn = not jumpOn
     jumpButton.Text = jumpOn and "Jump: ON" or "Jump: OFF"
-    print("[PurpleMovement] Jump:", jumpOn)
 end
 
 speedButton.MouseButton1Click:Connect(onSpeedClick)
 jumpButton.MouseButton1Click:Connect(onJumpClick)
+
+-- fallback untuk mobile
+speedButton.Activated:Connect(onSpeedClick)
+jumpButton.Activated:Connect(onJumpClick)
 
 -- ================== INFINITY JUMP ==================
 UIS.JumpRequest:Connect(function()
@@ -263,11 +267,7 @@ player.CharacterAdded:Connect(function(char)
     else
         h.WalkSpeed = normalSpeed
     end
-    if speedOn then
-        speedButton.Text = "Speed: ON (" .. boostSpeed .. ")"
-    else
-        speedButton.Text = "Speed: OFF"
-    end
+    refreshSpeedUI()
     jumpButton.Text = jumpOn and "Jump: ON" or "Jump: OFF"
 end)
 
