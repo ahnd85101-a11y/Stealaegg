@@ -1,22 +1,16 @@
--- PURPLE MOVEMENT - FINAL
--- Speed Boost (1-9999) + Infinity Jump + Draggable
--- Tombol dijamin bisa diklik
-
+-- PURPLE MOVEMENT - CLEAN (tanpa double-bind)
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 
-local speedOn = false
-local jumpOn = false
+local speedOn, jumpOn = false, false
 local normalSpeed = 16
 local boostSpeed = 50
 local MIN_SPEED, MAX_SPEED = 1, 9999
 
--- ================== HELPER ==================
 local function getHumanoid()
     local char = player.Character
-    if not char then return nil end
-    return char:FindFirstChildOfClass("Humanoid")
+    return char and char:FindFirstChildOfClass("Humanoid")
 end
 
 local function corner(parent, r)
@@ -26,20 +20,17 @@ local function corner(parent, r)
     return c
 end
 
--- ================== GUI ==================
 local gui = Instance.new("ScreenGui")
 gui.Name = "PurpleMovement"
 gui.ResetOnSpawn = false
 gui.DisplayOrder = 9999
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
 local placed = pcall(function() gui.Parent = game:GetService("CoreGui") end)
 if not placed or not gui.Parent then
     gui.Parent = player:WaitForChild("PlayerGui")
 end
 
 local frame = Instance.new("Frame")
-frame.Name = "Main"
 frame.Size = UDim2.fromOffset(250, 340)
 frame.Position = UDim2.new(0.05, 0, 0.3, 0)
 frame.BackgroundColor3 = Color3.fromRGB(40, 20, 65)
@@ -58,7 +49,6 @@ title.Font = Enum.Font.GothamBold
 title.ZIndex = 10
 title.Parent = frame
 
--- ================== TOMBOL ==================
 local function makeButton(text, y)
     local b = Instance.new("TextButton")
     b.Size = UDim2.new(0.9, 0, 0, 44)
@@ -80,7 +70,6 @@ end
 local speedButton = makeButton("Speed: OFF", 38)
 local jumpButton  = makeButton("Jump: OFF", 88)
 
--- ================== LABEL ==================
 local speedLabel = Instance.new("TextLabel")
 speedLabel.Size = UDim2.new(0.9, 0, 0, 22)
 speedLabel.Position = UDim2.new(0.05, 0, 0, 138)
@@ -92,7 +81,6 @@ speedLabel.Font = Enum.Font.Gotham
 speedLabel.ZIndex = 10
 speedLabel.Parent = frame
 
--- ================== TEXTBOX ==================
 local speedBox = Instance.new("TextBox")
 speedBox.Size = UDim2.new(0.9, 0, 0, 32)
 speedBox.Position = UDim2.new(0.05, 0, 0, 162)
@@ -107,7 +95,6 @@ speedBox.ZIndex = 10
 speedBox.Parent = frame
 corner(speedBox, 8)
 
--- ================== SLIDER ==================
 local sliderBg = Instance.new("Frame")
 sliderBg.Size = UDim2.new(0.9, 0, 0, 12)
 sliderBg.Position = UDim2.new(0.05, 0, 0, 208)
@@ -135,25 +122,18 @@ sliderKnob.ZIndex = 12
 sliderKnob.Parent = sliderBg
 corner(sliderKnob, 10)
 
--- ================== LOGIC SPEED ==================
 local function refreshSpeedUI()
     speedLabel.Text = "Speed: " .. boostSpeed
     local pct = (boostSpeed - MIN_SPEED) / (MAX_SPEED - MIN_SPEED)
     sliderFill.Size = UDim2.new(pct, 0, 1, 0)
     sliderKnob.Position = UDim2.new(pct, 0, 0.5, 0)
     speedBox.Text = tostring(boostSpeed)
-    if speedOn then
-        speedButton.Text = "Speed: ON (" .. boostSpeed .. ")"
-    else
-        speedButton.Text = "Speed: OFF"
-    end
+    speedButton.Text = speedOn and ("Speed: ON (" .. boostSpeed .. ")") or "Speed: OFF"
 end
 
 local function setSpeed(value)
-    value = tonumber(value) or boostSpeed
-    value = math.floor(value)
-    value = math.clamp(value, MIN_SPEED, MAX_SPEED)
-    boostSpeed = value
+    value = math.floor(tonumber(value) or boostSpeed)
+    boostSpeed = math.clamp(value, MIN_SPEED, MAX_SPEED)
     refreshSpeedUI()
     if speedOn then
         local h = getHumanoid()
@@ -180,7 +160,6 @@ sliderBg.InputBegan:Connect(function(input)
     end
 end)
 
--- ================== DRAG FRAME ==================
 local frameDragging = false
 local dragStart, dragOrigin
 
@@ -201,7 +180,6 @@ dragBar.InputBegan:Connect(function(input)
     end
 end)
 
--- ================== SATU LISTENER GLOBAL ==================
 UIS.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement
     or input.UserInputType == Enum.UserInputType.Touch then
@@ -225,32 +203,23 @@ UIS.InputEnded:Connect(function(input)
     end
 end)
 
--- ================== CLICK BINDING ==================
-local function onSpeedClick()
+-- SINGLE BIND (tidak dobel)
+speedButton.MouseButton1Click:Connect(function()
     speedOn = not speedOn
     local h = getHumanoid()
     if speedOn then
         if h then h.WalkSpeed = boostSpeed end
-        speedButton.Text = "Speed: ON (" .. boostSpeed .. ")"
     else
         if h then h.WalkSpeed = normalSpeed end
-        speedButton.Text = "Speed: OFF"
     end
-end
+    refreshSpeedUI()
+end)
 
-local function onJumpClick()
+jumpButton.MouseButton1Click:Connect(function()
     jumpOn = not jumpOn
     jumpButton.Text = jumpOn and "Jump: ON" or "Jump: OFF"
-end
+end)
 
-speedButton.MouseButton1Click:Connect(onSpeedClick)
-jumpButton.MouseButton1Click:Connect(onJumpClick)
-
--- fallback untuk mobile
-speedButton.Activated:Connect(onSpeedClick)
-jumpButton.Activated:Connect(onJumpClick)
-
--- ================== INFINITY JUMP ==================
 UIS.JumpRequest:Connect(function()
     if not jumpOn then return end
     local h = getHumanoid()
@@ -259,17 +228,11 @@ UIS.JumpRequest:Connect(function()
     end
 end)
 
--- ================== RESPAWN ==================
 player.CharacterAdded:Connect(function(char)
     local h = char:WaitForChild("Humanoid")
-    if speedOn then
-        h.WalkSpeed = boostSpeed
-    else
-        h.WalkSpeed = normalSpeed
-    end
+    h.WalkSpeed = speedOn and boostSpeed or normalSpeed
     refreshSpeedUI()
     jumpButton.Text = jumpOn and "Jump: ON" or "Jump: OFF"
 end)
 
--- init
 refreshSpeedUI()
