@@ -1,55 +1,54 @@
--- SPEED BOOST + INFINITY JUMP | Draggable + Speed 1-9999
--- Fixed version
+-- PURPLE MOVEMENT - REWRITE
+-- Speed Boost (1-9999) + Infinity Jump + Draggable
+-- Fokus: tombol PASTI bisa diklik
 
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 
-local speedOn, jumpOn = false, false
+local speedOn = false
+local jumpOn = false
 local normalSpeed = 16
 local boostSpeed = 50
 local MIN_SPEED, MAX_SPEED = 1, 9999
 
-------------------------------------------------------------
--- HELPER (dideklarasikan paling atas)
-------------------------------------------------------------
+-- ================== HELPERS ==================
 local function getHumanoid()
     local char = player.Character
-    return char and char:FindFirstChildOfClass("Humanoid")
+    if not char then return nil end
+    return char:FindFirstChildOfClass("Humanoid")
 end
 
-local function newCorner(parent, r)
+local function corner(parent, r)
     local c = Instance.new("UICorner")
     c.CornerRadius = UDim.new(0, r)
     c.Parent = parent
-    return c
 end
 
-------------------------------------------------------------
--- GUI
-------------------------------------------------------------
+-- ================== GUI ==================
 local gui = Instance.new("ScreenGui")
-gui.Name = "PurpleMovementGUI"
+gui.Name = "PurpleMovement"
 gui.ResetOnSpawn = false
-gui.IgnoreGuiInset = true
+gui.DisplayOrder = 999
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-local ok = pcall(function() gui.Parent = game:GetService("CoreGui") end)
-if not ok or not gui.Parent then
+local placed = pcall(function() gui.Parent = game:GetService("CoreGui") end)
+if not placed or not gui.Parent then
     gui.Parent = player:WaitForChild("PlayerGui")
 end
 
 local frame = Instance.new("Frame")
+frame.Name = "Main"
 frame.Size = UDim2.fromOffset(240, 330)
 frame.Position = UDim2.new(0.05, 0, 0.3, 0)
 frame.BackgroundColor3 = Color3.fromRGB(40, 20, 65)
-frame.Active = true
 frame.BorderSizePixel = 0
+frame.Active = false        -- penting: jangan menelan klik tombol
 frame.Parent = gui
-newCorner(frame, 12)
+corner(frame, 12)
 
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 35)
+title.Size = UDim2.new(1, 0, 0, 34)
 title.BackgroundTransparency = 1
 title.Text = "PURPLE MOVEMENT"
 title.TextColor3 = Color3.fromRGB(210, 160, 255)
@@ -57,39 +56,44 @@ title.TextScaled = true
 title.Font = Enum.Font.GothamBold
 title.Parent = frame
 
-local function createButton(text, y)
+-- ================== TOMBOL ==================
+local function makeButton(text, y)
     local b = Instance.new("TextButton")
-    b.Size = UDim2.new(0.9, 0, 0, 45)
+    b.Size = UDim2.new(0.9, 0, 0, 44)
     b.Position = UDim2.new(0.05, 0, 0, y)
     b.BackgroundColor3 = Color3.fromRGB(115, 55, 185)
     b.TextColor3 = Color3.new(1, 1, 1)
     b.TextScaled = true
     b.Font = Enum.Font.GothamBold
     b.AutoButtonColor = true
+    b.Active = true             -- penting untuk beberapa executor
+    b.Selectable = true
     b.Text = text
+    b.ZIndex = 10               -- di atas elemen lain
     b.Parent = frame
-    newCorner(b, 8)
+    corner(b, 8)
     return b
 end
 
-local speedButton = createButton("Speed Boost: OFF", 40)
-local jumpButton  = createButton("Infinity Jump: OFF", 90)
+local speedButton = makeButton("Speed: OFF", 38)
+local jumpButton  = makeButton("Jump: OFF", 88)
 
--- Label
+-- ================== LABEL ==================
 local speedLabel = Instance.new("TextLabel")
 speedLabel.Size = UDim2.new(0.9, 0, 0, 22)
-speedLabel.Position = UDim2.new(0.05, 0, 0, 140)
+speedLabel.Position = UDim2.new(0.05, 0, 0, 138)
 speedLabel.BackgroundTransparency = 1
 speedLabel.Text = "Speed: " .. boostSpeed
 speedLabel.TextColor3 = Color3.fromRGB(210, 160, 255)
 speedLabel.TextScaled = true
 speedLabel.Font = Enum.Font.Gotham
+speedLabel.ZIndex = 10
 speedLabel.Parent = frame
 
--- TextBox
+-- ================== TEXTBOX ==================
 local speedBox = Instance.new("TextBox")
 speedBox.Size = UDim2.new(0.9, 0, 0, 32)
-speedBox.Position = UDim2.new(0.05, 0, 0, 165)
+speedBox.Position = UDim2.new(0.05, 0, 0, 162)
 speedBox.BackgroundColor3 = Color3.fromRGB(70, 35, 110)
 speedBox.TextColor3 = Color3.new(1, 1, 1)
 speedBox.TextScaled = true
@@ -97,44 +101,49 @@ speedBox.Font = Enum.Font.Gotham
 speedBox.Text = tostring(boostSpeed)
 speedBox.PlaceholderText = "1 - 9999"
 speedBox.ClearTextOnFocus = false
+speedBox.ZIndex = 10
 speedBox.Parent = frame
-newCorner(speedBox, 8)
+corner(speedBox, 8)
 
--- Slider
+-- ================== SLIDER ==================
 local sliderBg = Instance.new("Frame")
-sliderBg.Size = UDim2.new(0.9, 0, 0, 10)
-sliderBg.Position = UDim2.new(0.05, 0, 0, 212)
+sliderBg.Size = UDim2.new(0.9, 0, 0, 12)
+sliderBg.Position = UDim2.new(0.05, 0, 0, 208)
 sliderBg.BackgroundColor3 = Color3.fromRGB(70, 35, 110)
 sliderBg.BorderSizePixel = 0
+sliderBg.ZIndex = 10
 sliderBg.Parent = frame
-newCorner(sliderBg, 5)
+corner(sliderBg, 6)
 
 local sliderFill = Instance.new("Frame")
 sliderFill.Size = UDim2.new(0, 0, 1, 0)
 sliderFill.BackgroundColor3 = Color3.fromRGB(180, 100, 255)
 sliderFill.BorderSizePixel = 0
+sliderFill.ZIndex = 11
 sliderFill.Parent = sliderBg
-newCorner(sliderFill, 5)
+corner(sliderFill, 6)
 
 local sliderKnob = Instance.new("Frame")
-sliderKnob.Size = UDim2.fromOffset(18, 18)
+sliderKnob.Size = UDim2.fromOffset(20, 20)
 sliderKnob.AnchorPoint = Vector2.new(0.5, 0.5)
 sliderKnob.Position = UDim2.new(0, 0, 0.5, 0)
 sliderKnob.BackgroundColor3 = Color3.fromRGB(230, 190, 255)
 sliderKnob.BorderSizePixel = 0
-sliderKnob.ZIndex = 2
+sliderKnob.ZIndex = 12
 sliderKnob.Parent = sliderBg
-newCorner(sliderKnob, 9)
+corner(sliderKnob, 10)
 
-------------------------------------------------------------
--- SPEED LOGIC
-------------------------------------------------------------
-local function applySpeed()
+-- ================== LOGIC SPEED ==================
+local function refreshSpeedUI()
     speedLabel.Text = "Speed: " .. boostSpeed
+    local pct = (boostSpeed - MIN_SPEED) / (MAX_SPEED - MIN_SPEED)
+    sliderFill.Size = UDim2.new(pct, 0, 1, 0)
+    sliderKnob.Position = UDim2.new(pct, 0, 0.5, 0)
+    speedBox.Text = tostring(boostSpeed)
     if speedOn then
-        local h = getHumanoid()
-        if h then h.WalkSpeed = boostSpeed end
-        speedButton.Text = "Speed Boost: ON ("..boostSpeed..")"
+        speedButton.Text = "Speed: ON (" .. boostSpeed .. ")"
+    else
+        speedButton.Text = "Speed: OFF"
     end
 end
 
@@ -143,62 +152,64 @@ local function setSpeed(value)
     value = math.floor(value)
     value = math.clamp(value, MIN_SPEED, MAX_SPEED)
     boostSpeed = value
-
-    local pct = (boostSpeed - MIN_SPEED) / (MAX_SPEED - MIN_SPEED)
-    sliderFill.Size = UDim2.new(pct, 0, 1, 0)
-    sliderKnob.Position = UDim2.new(pct, 0, 0.5, 0)
-    speedBox.Text = tostring(boostSpeed)
-    applySpeed()
+    refreshSpeedUI()
+    if speedOn then
+        local h = getHumanoid()
+        if h then h.WalkSpeed = boostSpeed end
+    end
 end
 
 speedBox.FocusLost:Connect(function()
     setSpeed(speedBox.Text)
 end)
 
--- Slider drag (pakai flag terpisah)
 local sliderDragging = false
-local function sliderFromInput(input)
-    local relX = (input.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X
-    relX = math.clamp(relX, 0, 1)
-    setSpeed(MIN_SPEED + relX * (MAX_SPEED - MIN_SPEED))
+local function sliderFrom(input)
+    local x = (input.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X
+    x = math.clamp(x, 0, 1)
+    setSpeed(MIN_SPEED + x * (MAX_SPEED - MIN_SPEED))
 end
 
 sliderBg.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
     or input.UserInputType == Enum.UserInputType.Touch then
         sliderDragging = true
-        sliderFromInput(input)
+        sliderFrom(input)
     end
 end)
 
-------------------------------------------------------------
--- DRAG FRAME (flag terpisah)
-------------------------------------------------------------
+-- ================== DRAG FRAME ==================
 local frameDragging = false
-local dragStart, startPos
+local dragStart, dragOrigin
 
-frame.InputBegan:Connect(function(input)
+local dragBar = Instance.new("TextButton")   -- area drag: judul
+dragBar.Size = UDim2.new(1, 0, 0, 34)
+dragBar.BackgroundTransparency = 1
+dragBar.Text = ""
+dragBar.ZIndex = 9
+dragBar.Active = true
+dragBar.Parent = frame
+
+dragBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
     or input.UserInputType == Enum.UserInputType.Touch then
         frameDragging = true
         dragStart = input.Position
-        startPos = frame.Position
+        dragOrigin = frame.Position
     end
 end)
 
-------------------------------------------------------------
--- SATU listener global untuk kedua drag
-------------------------------------------------------------
+-- ================== SATU LISTENER GLOBAL ==================
 UIS.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement
     or input.UserInputType == Enum.UserInputType.Touch then
         if sliderDragging then
-            sliderFromInput(input)
+            pcall(sliderFrom, input)
         elseif frameDragging then
             local delta = input.Position - dragStart
             frame.Position = UDim2.new(
-                startPos.X.Scale, startPos.X.Offset + delta.X,
-                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+                dragOrigin.X.Scale, dragOrigin.X.Offset + delta.X,
+                dragOrigin.Y.Scale, dragOrigin.Y.Offset + delta.Y
             )
         end
     end
@@ -212,48 +223,53 @@ UIS.InputEnded:Connect(function(input)
     end
 end)
 
-------------------------------------------------------------
--- BUTTONS (pakai Activated + fallback)
-------------------------------------------------------------
-local function bindClick(button, callback)
-    button.Activated:Connect(callback)
-    button.MouseButton1Click:Connect(callback)
+-- ================== CLICK BINDING (single, anti-double) ==================
+local function onSpeedClick()
+    speedOn = not speedOn
+    local h = getHumanoid()
+    if speedOn then
+        if h then h.WalkSpeed = boostSpeed end
+        speedButton.Text = "Speed: ON (" .. boostSpeed .. ")"
+    else
+        if h then h.WalkSpeed = normalSpeed end
+        speedButton.Text = "Speed: OFF"
+    end
+    print("[PurpleMovement] Speed:", speedOn, "value:", boostSpeed)
 end
 
-bindClick(speedButton, function()
-    speedOn = not speedOn
-    if speedOn then
-        speedButton.Text = "Speed Boost: ON ("..boostSpeed..")"
-        local h = getHumanoid()
-        if h then h.WalkSpeed = boostSpeed end
-    else
-        speedButton.Text = "Speed Boost: OFF"
-        local h = getHumanoid()
-        if h then h.WalkSpeed = normalSpeed end
-    end
-end)
-
-bindClick(jumpButton, function()
+local function onJumpClick()
     jumpOn = not jumpOn
-    jumpButton.Text = jumpOn and "Infinity Jump: ON" or "Infinity Jump: OFF"
-end)
+    jumpButton.Text = jumpOn and "Jump: ON" or "Jump: OFF"
+    print("[PurpleMovement] Jump:", jumpOn)
+end
 
+speedButton.MouseButton1Click:Connect(onSpeedClick)
+jumpButton.MouseButton1Click:Connect(onJumpClick)
+
+-- ================== INFINITY JUMP ==================
 UIS.JumpRequest:Connect(function()
-    if jumpOn then
-        local h = getHumanoid()
-        if h then
-            h:ChangeState(Enum.HumanoidStateType.Jumping)
-        end
+    if not jumpOn then return end
+    local h = getHumanoid()
+    if h then
+        h:ChangeState(Enum.HumanoidStateType.Jumping)
     end
 end)
 
+-- ================== RESPAWN ==================
 player.CharacterAdded:Connect(function(char)
     local h = char:WaitForChild("Humanoid")
-    h.WalkSpeed = speedOn and boostSpeed or normalSpeed
     if speedOn then
-        speedButton.Text = "Speed Boost: ON ("..boostSpeed..")"
+        h.WalkSpeed = boostSpeed
+    else
+        h.WalkSpeed = normalSpeed
     end
+    if speedOn then
+        speedButton.Text = "Speed: ON (" .. boostSpeed .. ")"
+    else
+        speedButton.Text = "Speed: OFF"
+    end
+    jumpButton.Text = jumpOn and "Jump: ON" or "Jump: OFF"
 end)
 
 -- init
-setSpeed(boostSpeed)
+refreshSpeedUI()
